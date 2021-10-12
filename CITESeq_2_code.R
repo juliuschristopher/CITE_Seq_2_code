@@ -266,7 +266,7 @@ experiment <- FindMultiModalNeighbors(
   dims.list = list(1:30, 1:18), modality.weight.name = "RNA.weight"
 )
 #Determing resolution (cluster number) for wnn plot?
-clustree(experiment, prefix = "wsnn_res.") + #1.8 see,s to be a suitable option for the resolution
+clustree(experiment, prefix = "wsnn_res.") +
   theme(legend.position="bottom")
 
 
@@ -276,7 +276,7 @@ experiment <- RunUMAP(experiment, reduction = 'pca', dims = 1:30, assay = 'RNA',
 experiment<- RunUMAP(experiment, reduction = 'apca', dims = 1:18, assay = 'ADT', 
                      reduction.name = 'adt.umap', reduction.key = 'adtUMAP_')
 experiment <- RunUMAP(experiment, nn.name = "weighted.nn", reduction.name = "wnn.umap", reduction.key = "wnnUMAP_")
-experiment <- FindClusters(experiment, graph.name = "wsnn", algorithm = 3, resolution = 1.8, verbose = FALSE)
+experiment <- FindClusters(experiment, graph.name = "wsnn", algorithm = 3, resolution = 1.0, verbose = TRUE)
 
 
 DefaultAssay(experiment) <- "RNA"
@@ -293,7 +293,7 @@ p2
 p3
 
 ###Umap-wnn by mouse
-plot_mouse <- DimPlot(experiment, label = TRUE,reduction = "wnn.umap", label.size = 2.5, group.by = "Source")
+plot_mouse <- DimPlot(experiment, label = TRUE,reduction = "wnn.umap", label.size = 2.5, group.by = "orig.ident")
 plot_mouse
 
 ###Match the RNA Names to the Antibodies, this should be checked
@@ -307,8 +307,7 @@ FeaturePlot(experiment, features = c("CD19", "CD4", "CD8A", "PRDM1", "PPBP", "NK
 
 RidgePlot(experiment, features = c("CD19", "CYP11A1"), ncol = 2)
 
-FeaturePlot(experiment, features = "MYC", reduction = "wnn.umap")
-?FeaturePlot
+FeaturePlot(experiment, features = "CD4", reduction = "wnn.umap")
 
 ##Finding all the markers
 experiment.markers <- FindAllMarkers(experiment, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
