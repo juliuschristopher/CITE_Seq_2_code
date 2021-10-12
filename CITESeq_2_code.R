@@ -10,6 +10,14 @@ library(writexl)
 library(ggridges)
 library(clustree)
 library(scRepertoire)
+library(future)
+library(glmGamPoi)
+
+#Alter working capacity
+plan()
+
+plan("multiprocess", workers = 4)
+options(future.globals.maxSize= 2097152000) # 2Gb
 
 #Initial setup of colour palettes
 col = colorRampPalette(brewer.pal(12, 'Set3'))(20)
@@ -151,7 +159,7 @@ experiment<-merge(x= a, y=c(b,c,d,f,g,h))
 experiment
 str(experiment)
 head(experiment[[]])
-####Quality control and normalisation####
+####Quality control, filtering, normalisation and scaling####
 #Mitochondrial QC metrics
 experiment[["percent.mt"]] <- PercentageFeatureSet(experiment, pattern = "^MT-")
 
@@ -193,72 +201,76 @@ experiment <-  filter_seurat(experiment)
 #Normalise dataset - default
 experiment <- NormalizeData(experiment, normalization.method = "LogNormalize", scale.factor = 10000)
 
+#Normalise dataset - SCTransform
+experiment = SCTransform(experiment, verbose = TRUE)
 
-###Identification of highly variable features (feature selection)
+#Find variable features
 experiment <- FindVariableFeatures(experiment, selection.method = "vst")
-##Plot top 20 most variable genes
-top20 <- head(VariableFeatures(experiment), 20)
-Plot_4 <- VariableFeaturePlot(experiment)
-Plot_5 <- LabelPoints(plot = Plot_4, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
+?FindVariableFeatures
+top20 = head(VariableFeatures(experiment), 20)
 
-###Scaling the data
-all.genes <- rownames(experiment)
-experiment <- ScaleData(experiment, feautures = all.genes)
+plot3 = VariableFeaturePlot(experiment)
+plot4 = LabelPoints(plot = plot3, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
+plot4
 
-##Scaling out other sources of contamination - e.g. percent.mt
-experiment <- ScaleData(experiment, vars.to.regress = "percent.mt")
+#Scale data
+experiment <- ScaleData(experiment)
 
-###perform linear dimensional reduction (PCA)
+####Dimensionality reduction -PCA####
+#Perform linear dimensional reduction (PCA)
 experiment <- RunPCA(experiment, verbose = FALSE, features = VariableFeatures(object = experiment))
 
 ##Visualise PCA results
 print(experiment[["pca"]], dims = 1:5, nfeatures = 5)
-Plot_6 <- VizDimLoadings(experiment, dims = 1:2, reduction = "pca")
-Plot_7 <- DimPlot(experiment, reduction = "pca")
-Plot_8 <- DimHeatmap(experiment, dims = 1, cells = 500, balanced = TRUE)
-Plot_9 <- DimHeatmap(experiment, dims = 1:15, cells = 500, balanced = TRUE)
+VizDimLoadings(experiment, dims = 1:4, reduction = "pca", nfeatures = 15)
 
-###Determine dimensionality of the dataset - How many principal components should be included to capture the majority of variance?
-experiment <- JackStraw(experiment, num.replicate = 100)
-experiment <- ScoreJackStraw(experiment, dims = 1:20)
-JackStrawPlot(experiment, dims = 1:20)
-Plot_10 <- ElbowPlot(experiment, ndims = 50) #50+ PCs required to capture variance
+plot5 <- DimPlot(experiment, reduction = "pca", dims = c(1,2))
+plot6 <- DimPlot(experiment, reduction = "pca", dims = c(1,3))
+plot5 + plot6
 
-###How many clusters are appropriate?
-##Cluster Tree Analysis
-head(experiment[[]])
-Plot_11 <- clustree(experiment, prefix = "RNA_snn_res.") + #1.1 see,s to be a suitable option for the resolution
+DimHeatmap(experiment, dims = 1:6, cells = 500, balanced = TRUE)
+
+####Determine dimensionality of the dataset - How many principal components should be included to capture the majority of variance?####
+pca_variance <- experiment@reductions$pca@stdev^2
+plot(pca_variance/sum(pca_variance), 
+     ylab="Proportion of variance explained", 
+     xlab="Principal component")
+abline(h = 0.01) #23
+
+####Determine number of clusters####
+##luster Tree Analysis
+clustree(experiment, prefix = "RNA_snn_res.") +
   theme(legend.position="bottom")
 
-###Cluster the cells
+#Cluster the cells
 experiment <- FindNeighbors(experiment, dims = 1:30)
-experiment <- FindClusters(experiment, resolution = 1.1, verbose = FALSE)
+experiment <- FindClusters(experiment, resolution = 1.0, verbose = FALSE)
 experiment <- RunUMAP(experiment, dims = 1:30)
-Plot_12 <- DimPlot(experiment, label = TRUE, cols=colbig) +  ggtitle("RNA Clustering")
+DimPlot(experiment, label = TRUE, cols=colbig) +  ggtitle("RNA Clustering")
 
-###Scale antibody data
+####Scale antibody data####
 DefaultAssay(experiment) <- "ADT"
 VariableFeatures(experiment) <- rownames(experiment[["ADT"]])
 experiment <- NormalizeData(experiment, normalization.method = "CLR", margin = 2)
 experiment <- ScaleData(experiment)
 experiment <- RunPCA(experiment,reduction.name = 'apca')
 
-##Visualise antobody PCA
+#Visualise antobody PCA
 print(experiment[["apca"]], dims = 1:10, nfeatures = 5)
-Plot_13 <- VizDimLoadings(experiment, dims = 1:10, reduction = "apca")
+Plot_13 <- VizDimLoadings(experiment, dims = 1:4, reduction = "apca", nfeatures = 15)
+Plot_13
 
-###Combine into wnn plot
+####Combine into wnn plot####
 experiment <- FindMultiModalNeighbors(
   experiment, reduction.list = list("pca", "apca"), 
   dims.list = list(1:30, 1:18), modality.weight.name = "RNA.weight"
 )
-###Determing resolution (cluster number) for wnn plot?
-head(experiment[[]])
-Plot_14 <- clustree(experiment, prefix = "wsnn_res.") + #1.8 see,s to be a suitable option for the resolution
+#Determing resolution (cluster number) for wnn plot?
+clustree(experiment, prefix = "wsnn_res.") + #1.8 see,s to be a suitable option for the resolution
   theme(legend.position="bottom")
-Plot_14
 
-###UMPA plots for RNA, ADT and WNN
+
+#UMPA plots for RNA, ADT and WNN
 experiment <- RunUMAP(experiment, reduction = 'pca', dims = 1:30, assay = 'RNA', 
                       reduction.name = 'rna.umap', reduction.key = 'rnaUMAP_')
 experiment<- RunUMAP(experiment, reduction = 'apca', dims = 1:18, assay = 'ADT', 
