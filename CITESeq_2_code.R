@@ -15,7 +15,6 @@ library(scRepertoire)
 col = colorRampPalette(brewer.pal(12, 'Set3'))(20)
 colbig = colorRampPalette(brewer.pal(12, 'Set3'))(50)
 
-
 ####Load the 10X Cell Ranger output####
 #Read the 10x Cell Ranger Output
 a_ge.data <- Read10X(data.dir = "~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/GE/A_WT_GE/outs/filtered_feature_bc_matrix")
@@ -84,7 +83,7 @@ rownames(m)=rownames(a_ab.data)
 colnames(m)=colnames(a_ge.data)
 common=intersect(colnames(a_ge.data),colnames(a_ab.data))
 m[,common]=a_ab.data[,common]
-a = CreateSeuratObject(counts = a_ge.data,project="a")
+a = CreateSeuratObject(counts = a_ge.data,project="a", min.cells = 3)
 adt_assay <- CreateAssayObject(counts = m)
 a[["ADT"]] <- adt_assay
 
@@ -93,7 +92,7 @@ rownames(m)=rownames(b_ab.data)
 colnames(m)=colnames(b_ge.data)
 common=intersect(colnames(b_ge.data),colnames(b_ab.data))
 m[,common]=b_ab.data[,common]
-b = CreateSeuratObject(counts = b_ge.data,project="b")
+b = CreateSeuratObject(counts = b_ge.data,project="b", min.cells = 3)
 adt_assay <- CreateAssayObject(counts = m)
 b[["ADT"]] <- adt_assay
 
@@ -102,7 +101,7 @@ rownames(m)=rownames(c_ab.data)
 colnames(m)=colnames(c_ge.data)
 common=intersect(colnames(c_ge.data),colnames(c_ab.data))
 m[,common]=c_ab.data[,common]
-c = CreateSeuratObject(counts = c_ge.data,project="c")
+c = CreateSeuratObject(counts = c_ge.data,project="c", min.cells = 3)
 adt_assay <- CreateAssayObject(counts = m)
 c[["ADT"]] <- adt_assay
 
@@ -111,7 +110,7 @@ rownames(m)=rownames(d_ab.data)
 colnames(m)=colnames(d_ge.data)
 common=intersect(colnames(d_ge.data),colnames(d_ab.data))
 m[,common]=d_ab.data[,common]
-d = CreateSeuratObject(counts = d_ge.data,project="d")
+d = CreateSeuratObject(counts = d_ge.data,project="d", min.cells = 3)
 adt_assay <- CreateAssayObject(counts = m)
 d[["ADT"]] <- adt_assay
 
@@ -120,7 +119,7 @@ rownames(m)=rownames(f_ab.data)
 colnames(m)=colnames(f_ge.data)
 common=intersect(colnames(f_ge.data),colnames(f_ab.data))
 m[,common]=f_ab.data[,common]
-f = CreateSeuratObject(counts = f_ge.data,project="f")
+f = CreateSeuratObject(counts = f_ge.data,project="f", min.cells = 3)
 adt_assay <- CreateAssayObject(counts = m)
 f[["ADT"]] <- adt_assay
 
@@ -129,7 +128,7 @@ rownames(m)=rownames(g_ab.data)
 colnames(m)=colnames(g_ge.data)
 common=intersect(colnames(g_ge.data),colnames(g_ab.data))
 m[,common]=g_ab.data[,common]
-g = CreateSeuratObject(counts = g_ge.data,project="g")
+g = CreateSeuratObject(counts = g_ge.data,project="g", min.cells = 3)
 adt_assay <- CreateAssayObject(counts = m)
 g[["ADT"]] <- adt_assay
 
@@ -138,43 +137,62 @@ rownames(m)=rownames(h_ab.data)
 colnames(m)=colnames(h_ge.data)
 common=intersect(colnames(h_ge.data),colnames(h_ab.data))
 m[,common]=h_ab.data[,common]
-h = CreateSeuratObject(counts = h_ge.data,project="h")
+h = CreateSeuratObject(counts = h_ge.data,project="h", min.cells = 3)
 adt_assay <- CreateAssayObject(counts = m)
 h[["ADT"]] <- adt_assay
 
 head(a[[]])
-####Process samples as one####
+#####Process samples as one####
 experiments=c(a,b,c,d,f,g,h)
 experiment_names=c("a","b","c","d","f","g","h")
 
 experiment<-merge(x= a, y=c(b,c,d,f,g,h))
 
-####QC and plotting####
-###Mitochondrial QC metrics
+experiment
+str(experiment)
+head(experiment[[]])
+####Quality control and normalisation####
+#Mitochondrial QC metrics
 experiment[["percent.mt"]] <- PercentageFeatureSet(experiment, pattern = "^MT-")
 
-###Remove where nCount_ADT = 0
+#Remove where nCount_ADT = 0
 DefaultAssay(experiment) <- "ADT"
 experiment <- subset(experiment, nCount_ADT >0 )
 DefaultAssay(experiment) <- "RNA"
 
-##Show QC metrics for the first 5 cells
-head(experiment@meta.data, 5)
+#Visualize QC metrics as violin plot
+RNA_QC <- VlnPlot(experiment, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"))
+ADT_QC <- VlnPlot(experiment, features = c("nFeature_ADT", "nCount_ADT", "percent.mt"))
 
-###Visualize QC metrics as violin plot
-Plot_1 <- VlnPlot(experiment, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", ncol = 3))
+#FeatureScatter is typically used to visualize feature-feature relationships, but can be used for anything calculated by the object, i.e. columns in object metadata, PC scores etc.
+plot1 = FeatureScatter(experiment, feature1 = "nCount_RNA", feature2 = "percent.mt") + NoLegend()  +
+  ylab("% of mitochondrial genes") +
+  xlab("UMI counts") + 
+  geom_hline(yintercept = 5) 
 
-###Visualize QC by ploting feature vs feature
-Plot_2 <- FeatureScatter(experiment, feature = "nCount_RNA", feature2 = "percent.mt")
-Plot_3 <- FeatureScatter(experiment, feature = "nCount_RNA", feature2 = "nFeature_RNA")
-FeaturePlot(experiment, feature = "clonotype_id")
+plot2 = FeatureScatter(experiment, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + NoLegend() +
+  ylab("Number of genes") +
+  xlab("UMI counts") + 
+  geom_hline(yintercept = 200) 
 
+plot1 + plot2
 
-###Generally aim to filter out unique feature counts over 2,500 and less than 200; and percent.mt over 5%
-experiment <- subset(experiment, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+#Generally aim to filter out unique feature counts over 2,500 and less than 200; and percent.mt over 5%
+filter_seurat = function(seurat_object){
+  
+  message("Performing filter by number of genes and mitochondrial percentage.")
+  seurat_object = subset(seurat_object, subset = nFeature_RNA > 200  & percent.mt < 5 & nFeature_RNA < 2500)
+  message("Now the object has ", dim(seurat_object)[1], " genes and ", dim(seurat_object)[2], " cells.")
+  
+  
+  return(seurat_object)
+}
 
-###Normalise dataset - default
+experiment <-  filter_seurat(experiment)
+
+#Normalise dataset - default
 experiment <- NormalizeData(experiment, normalization.method = "LogNormalize", scale.factor = 10000)
+
 
 ###Identification of highly variable features (feature selection)
 experiment <- FindVariableFeatures(experiment, selection.method = "vst")
