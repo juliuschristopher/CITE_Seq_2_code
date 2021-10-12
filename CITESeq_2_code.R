@@ -164,14 +164,17 @@ f_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch
 g_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/G_E1020K_BCL6_VDJ/outs/filtered_contig_annotations.csv")
 h_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/H_E1020K_BCL6_VDJ/outs/filtered_contig_annotations.csv")
 
-head(a_cl.data)
-rownames(a_cl.data$barcode)=gsub("-1","_a",rownames(a_cl.data$barcode))
+#match barcode names with GE and ADT data
+a_cl.data$barcode=gsub("-1","_a",a_cl.data$barcode)
+b_cl.data$barcode=gsub("-1","_b",b_cl.data$barcode)
+c_cl.data$barcode=gsub("-1","_c",c_cl.data$barcode)
+d_cl.data$barcode=gsub("-1","_d",d_cl.data$barcode)
+f_cl.data$barcode=gsub("-1","_f",f_cl.data$barcode)
+g_cl.data$barcode=gsub("-1","_g",g_cl.data$barcode)
+h_cl.data$barcode=gsub("-1","_h",h_cl.data$barcode)
 
 contig_list <- list(a_cl.data, b_cl.data, c_cl.data, d_cl.data, f_cl.data, g_cl.data, h_cl.data)
 head(contig_list[[1]])
-
-rownames(a_cl.data)=gsub("-1","_a",rownames(a_cl.data))
-
 
 #Load rearrangement file
 a_rf.data <-  read_tsv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/A_WT_VDJ/outs/airr_rearrangement.tsv")
@@ -197,10 +200,9 @@ h_clono.data <-  read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_b
 clono_list <- list(a_clono.data, b_clono.data, c_clono.data, d_clono.data, f_clono.data, g_clono.data, h_clono.data)
 head(clono_list[[1]])
 
-colnames(a_ge.data)=gsub("-1","_a",colnames(a_ge.data))
+#Generate combined object
+combined <- combineBCR(contig_list, samples = c("a", "b", "c", "d", "f", "g", "h"), ID = c("WT", "WT", "BCL6", "BCL6", "E1020K", "E1020K_BCL6", "E1020K_BCL6"))
 
-
-combined <- combineBCR(contig_list, samples = c("MouseC1", "MouseC2", "MouseD1", "MouseD2"), ID = c("c1", "c2", "d1", "d2"))
 str(combined)
 head(combined[[1]])
 
