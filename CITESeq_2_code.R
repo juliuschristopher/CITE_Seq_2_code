@@ -3,6 +3,7 @@
 #Load required packages
 library(Seurat)
 library(ggplot2)
+library(tidyverse)
 library(patchwork)
 library(Matrix)
 library(RColorBrewer)
@@ -11,7 +12,9 @@ library(ggridges)
 library(clustree)
 library(scRepertoire)
 library(future)
-library(glmGamPoi)
+library(alakazam)
+library(immunarch)
+library(airr)
 
 #Alter working capacity
 plan()
@@ -150,6 +153,58 @@ adt_assay <- CreateAssayObject(counts = m)
 h[["ADT"]] <- adt_assay
 
 head(a[[]])
+
+####Incoperate VDJ data####
+#Load contig file
+a_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/A_WT_VDJ/outs/filtered_contig_annotations.csv")
+b_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/B_WT_VDJ/outs/filtered_contig_annotations.csv")
+c_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/C_BCL6_VDJ/outs/filtered_contig_annotations.csv")
+d_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/D_BCL6_VDJ/outs/filtered_contig_annotations.csv")
+f_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/F_E1020K_VDJ/outs/filtered_contig_annotations.csv")
+g_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/G_E1020K_BCL6_VDJ/outs/filtered_contig_annotations.csv")
+h_cl.data <- read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/H_E1020K_BCL6_VDJ/outs/filtered_contig_annotations.csv")
+
+head(a_cl.data)
+rownames(a_cl.data$barcode)=gsub("-1","_a",rownames(a_cl.data$barcode))
+
+contig_list <- list(a_cl.data, b_cl.data, c_cl.data, d_cl.data, f_cl.data, g_cl.data, h_cl.data)
+head(contig_list[[1]])
+
+rownames(a_cl.data)=gsub("-1","_a",rownames(a_cl.data))
+
+
+#Load rearrangement file
+a_rf.data <-  read_tsv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/A_WT_VDJ/outs/airr_rearrangement.tsv")
+b_rf.data <-  read_tsv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/B_WT_VDJ/outs/airr_rearrangement.tsv")
+c_rf.data <-  read_tsv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/C_BCL6_VDJ/outs/airr_rearrangement.tsv")
+d_rf.data <-  read_tsv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/D_BCL6_VDJ/outs/airr_rearrangement.tsv")
+f_rf.data <-  read_tsv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/F_E1020K_VDJ/outs/airr_rearrangement.tsv")
+g_rf.data <-  read_tsv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/G_E1020K_BCL6_VDJ/outs/airr_rearrangement.tsv")
+h_rf.data <-  read_tsv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/H_E1020K_BCL6_VDJ/outs/airr_rearrangement.tsv")
+
+rear_list <- list(a_rf.data, b_rf.data, c_rf.data, d_rf.data, f_rf.data, g_rf.data, h_rf.data)
+head(rear_list[[1]])
+
+#Load clonotype file
+a_clono.data <-  read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/A_WT_VDJ/outs/clonotypes.csv")
+b_clono.data <-  read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/B_WT_VDJ/outs/clonotypes.csv")
+c_clono.data <-  read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/C_BCL6_VDJ/outs/clonotypes.csv")
+d_clono.data <-  read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/D_BCL6_VDJ/outs/clonotypes.csv")
+f_clono.data <-  read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/F_E1020K_VDJ/outs/clonotypes.csv")
+g_clono.data <-  read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/G_E1020K_BCL6_VDJ/outs/clonotypes.csv")
+h_clono.data <-  read.csv("~/Desktop/CITE-Sequencing_Data/CITE_Seq_2_files/VDJ_batch2/H_E1020K_BCL6_VDJ/outs/clonotypes.csv")
+
+clono_list <- list(a_clono.data, b_clono.data, c_clono.data, d_clono.data, f_clono.data, g_clono.data, h_clono.data)
+head(clono_list[[1]])
+
+colnames(a_ge.data)=gsub("-1","_a",colnames(a_ge.data))
+
+
+combined <- combineBCR(contig_list, samples = c("MouseC1", "MouseC2", "MouseD1", "MouseD2"), ID = c("c1", "c2", "d1", "d2"))
+str(combined)
+head(combined[[1]])
+
+
 #####Process samples as one####
 experiments=c(a,b,c,d,f,g,h)
 experiment_names=c("a","b","c","d","f","g","h")
@@ -276,7 +331,7 @@ experiment <- RunUMAP(experiment, reduction = 'pca', dims = 1:30, assay = 'RNA',
 experiment<- RunUMAP(experiment, reduction = 'apca', dims = 1:18, assay = 'ADT', 
                      reduction.name = 'adt.umap', reduction.key = 'adtUMAP_')
 experiment <- RunUMAP(experiment, nn.name = "weighted.nn", reduction.name = "wnn.umap", reduction.key = "wnnUMAP_")
-experiment <- FindClusters(experiment, graph.name = "wsnn", algorithm = 3, resolution = 1.0, verbose = TRUE)
+experiment <- FindClusters(experiment, graph.name = "wsnn", algorithm = 3, resolution = 0.8, verbose = TRUE)
 
 
 DefaultAssay(experiment) <- "RNA"
@@ -303,11 +358,12 @@ list2=c("PTPRC","FAS","CD19","IGHM","CR2","FCER2A","CD93","CD83","CD86","IGHD","
 ####Analysis of clusters####
 ##Different plotting options
 DefaultAssay(experiment) <- "RNA"
+DefaultAssay(experiment) <- "ADT"
 FeaturePlot(experiment, features = c("CD19", "CD4", "CD8A", "PRDM1", "PPBP", "NKG7", "CST3", "FOXP3", "B220"), reduction = "wnn.umap")
 
 RidgePlot(experiment, features = c("CD19", "CYP11A1"), ncol = 2)
 
-FeaturePlot(experiment, features = "CD4", reduction = "wnn.umap")
+FeaturePlot(experiment, features = "IL10", reduction = "wnn.umap")
 
 ##Finding all the markers
 experiment.markers <- FindAllMarkers(experiment, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
@@ -317,7 +373,7 @@ experiment.markers %>%
 DoHeatmap(experiment, features = top10$gene) + NoLegend()
 
 ##DE genes of individual clusters
-Cluster_2 <- FindMarkers(experiment, ident.1 = 2, assay = "RNA")
+Cluster_12 <- FindMarkers(experiment, ident.1 = 12, assay = "RNA")
 Cluster_2_adt <- FindMarkers(experiment, ident.1 = 2, assay = "ADT")
 
 Cluster_12 <- FindMarkers(experiment, ident.1 = 12, assay = "RNA")
