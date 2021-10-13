@@ -207,7 +207,16 @@ combined[[1]]
 str(combined)
 head(combined[[1]])
 
+#Make sure barcodes are identicla to GE and ADT data
+combined$a$barcode=gsub("a_","",combined$a$barcode)
+combined$b$barcode=gsub("b_","",combined$b$barcode)
+combined$c$barcode=gsub("c_","",combined$c$barcode)
+combined$d$barcode=gsub("d_","",combined$d$barcode)
+combined$f$barcode=gsub("f_","",combined$f$barcode)
+combined$g$barcode=gsub("g_","",combined$g$barcode)
+combined$h$barcode=gsub("h_","",combined$h$barcode)
 
+head(combined$a$barcode)
 #####Process samples as one####
 experiments=c(a,b,c,d,f,g,h)
 experiment_names=c("a","b","c","d","f","g","h")
@@ -424,12 +433,18 @@ compareClonotypes(combined, samples = c("a", "b"), cloneCall = "aa", graph = "al
 vizGenes(combined, gene = "J", chain = "IGH", plot = "bar", order = "variance", scale = TRUE)
 vizGenes(combined, gene = "V", chain = "IGL", plot = "bar", order = "variance", scale = TRUE)
 
-vizGenes(combined, gene = "V", chain = "IGL", plot = "heatmap", scale = TRUE, order = "gene")
-
+vizGenes(combined, gene = "V", chain = "IGH", plot = "heatmap", scale = TRUE, order = "gene")
 
 #Clonal overlap
 clonalOverlap(combined, cloneCall = "gene+nt", 
               method = "morisita")
-#Clone Size Distribution
-clonesizeDistribution(combined, cloneCall = "gene+nt", 
-                      method="ward.D2")
+
+#Clonotype proportion
+clonalProportion(combined, cloneCall = "gene")
+clonalProportion(combined, cloneCall = "nt")
+
+#Clonal Homeostasis
+clonalHomeostasis(combined, cloneCall = "gene")
+clonalHomeostasis(combined, cloneCall = "nt")
+
+
