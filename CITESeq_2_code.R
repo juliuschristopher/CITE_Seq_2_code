@@ -20,7 +20,7 @@ library(airr)
 plan()
 
 plan("multiprocess", workers = 4)
-options(future.globals.maxSize= 2097152000) # 2Gb
+options(future.globals.maxSize= 10097152000) # 10Gb
 
 #Initial setup of colour palettes
 col = colorRampPalette(brewer.pal(12, 'Set3'))(20)
@@ -239,7 +239,7 @@ experiment[["percent.mt"]] <- PercentageFeatureSet(experiment, pattern = "^MT-")
 
 #Remove where nCount_ADT = 0
 DefaultAssay(experiment) <- "ADT"
-experiment <- subset(experiment, nCount_ADT >0 )
+experiment <- subset(experiment, nCount_ADT >0)
 DefaultAssay(experiment) <- "RNA"
 
 #Visualize QC metrics as violin plot
@@ -272,15 +272,30 @@ filter_seurat = function(seurat_object){
 
 experiment <-  filter_seurat(experiment)
 
-#Normalise dataset - default
+####Normalise dataset - default####
 experiment <- NormalizeData(experiment, normalization.method = "LogNormalize", scale.factor = 10000, verbose = TRUE)
-
-#Normalise dataset - SCTransform
-experiment = SCTransform(experiment, verbose = TRUE)
 
 #Find variable features
 experiment <- FindVariableFeatures(experiment, selection.method = "vst")
-?FindVariableFeatures
+top20 = head(VariableFeatures(experiment), 20)
+
+plot3 = VariableFeaturePlot(experiment)
+plot4 = LabelPoints(plot = plot3, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
+plot4
+
+
+####Normalise dataset - SCTransform####
+experiment = SCTransform(experiment, verbose = TRUE)
+experiment[["SCT"]]
+
+top20 = head(VariableFeatures(experiment), 30)
+
+plot1.1 = VariableFeaturePlot(experiment)
+plot2.1 = LabelPoints(plot = plot1.1, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
+plot2.1
+
+#Find variable features
+experiment <- FindVariableFeatures(experiment, selection.method = "vst")
 top20 = head(VariableFeatures(experiment), 20)
 
 plot3 = VariableFeaturePlot(experiment)
