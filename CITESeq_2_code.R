@@ -302,7 +302,7 @@ plot3 = VariableFeaturePlot(experiment)
 plot4 = LabelPoints(plot = plot3, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
 plot4
 
-#Scale data
+#Scale data?
 experiment <- ScaleData(experiment)
 
 ####Dimensionality reduction -PCA####
@@ -397,8 +397,12 @@ FeaturePlot(experiment, features = c("CD19", "CD4", "CD8A", "PRDM1", "PPBP", "NK
 
 RidgePlot(experiment, features = c("CD19", "CYP11A1"), ncol = 2)
 
-FeaturePlot(experiment, features = "NCR1", reduction = "wnn.umap")
+FeaturePlot(experiment, features = c("IGHV1-53", "IGKV3-4", "IGHD1-1"), reduction = "wnn.umap")
+VlnPlot(experiment, feature = "IGKV3-4")
 
+FeaturePlot(experiment, features = c("IGKV3-4"), reduction = "wnn.umap", split.by = "orig.ident")
+VlnPlot(experiment, feature = "RNF213")
+p3
 ##Finding all the markers
 experiment.markers <- FindAllMarkers(experiment, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
 experiment.markers %>%
@@ -407,8 +411,10 @@ experiment.markers %>%
 DoHeatmap(experiment, features = top10$gene) + NoLegend()
 
 ##DE genes of individual clusters
-Cluster_12 <- FindMarkers(experiment, ident.1 = 12, assay = "RNA")
-Cluster_2_adt <- FindMarkers(experiment, ident.1 = 2, assay = "ADT")
+Cluster_11 <- FindMarkers(experiment, ident.1 = 11, assay = "RNA")
+Cluster_11_adt <- FindMarkers(experiment, ident.1 = 11, assay = "ADT")
+
+experiment
 
 Cluster_12 <- FindMarkers(experiment, ident.1 = 12, assay = "RNA")
 Cluster_12_adt <- FindMarkers(experiment, ident.1 = 12, assay = "ADT")
@@ -452,10 +458,10 @@ lengthContig(combined, cloneCall = "nt")
 compareClonotypes(combined, samples = c("a", "b"), cloneCall = "aa", graph = "alluvial") #Computationally intese
 
 #Visualise Gene Usage
-vizGenes(combined, gene = "J", chain = "IGH", plot = "bar", order = "variance", scale = TRUE)
+vizGenes(combined, gene = "D", chain = "IGH", plot = "bar", order = "variance", scale = TRUE)
 vizGenes(combined, gene = "V", chain = "IGL", plot = "bar", order = "variance", scale = TRUE)
 
-vizGenes(combined, gene = "V", chain = "IGH", plot = "heatmap", scale = TRUE, order = "gene")
+vizGenes(combined, gene = "V", chain = "IGL", plot = "heatmap", scale = TRUE, order = "gene")
 
 #Clonal overlap
 clonalOverlap(combined, cloneCall = "gene+nt", 
