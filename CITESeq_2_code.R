@@ -216,7 +216,7 @@ combined$f$barcode=gsub("f_","",combined$f$barcode)
 combined$g$barcode=gsub("g_","",combined$g$barcode)
 combined$h$barcode=gsub("h_","",combined$h$barcode)
 
-head(combined$a$barcode)
+head(combined$a)
 #####Process samples as one####
 experiments=c(a,b,c,d,f,g,h)
 experiment_names=c("a","b","c","d","f","g","h")
@@ -225,6 +225,13 @@ experiment<-merge(x= a, y=c(b,c,d,f,g,h))
 
 experiment
 str(experiment)
+head(experiment[[]])
+
+####Merge seurat object with VDJ data####
+experiment <- combineExpression(combined,
+                                   experiment,
+                                   cloneCall="gene", group.by = "sample")
+
 head(experiment[[]])
 ####Quality control, filtering, normalisation and scaling####
 #Mitochondrial QC metrics
@@ -266,7 +273,7 @@ filter_seurat = function(seurat_object){
 experiment <-  filter_seurat(experiment)
 
 #Normalise dataset - default
-experiment <- NormalizeData(experiment, normalization.method = "LogNormalize", scale.factor = 10000)
+experiment <- NormalizeData(experiment, normalization.method = "LogNormalize", scale.factor = 10000, verbose = TRUE)
 
 #Normalise dataset - SCTransform
 experiment = SCTransform(experiment, verbose = TRUE)
