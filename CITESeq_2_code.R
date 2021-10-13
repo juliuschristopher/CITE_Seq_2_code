@@ -201,7 +201,8 @@ clono_list <- list(a_clono.data, b_clono.data, c_clono.data, d_clono.data, f_clo
 head(clono_list[[1]])
 
 #Generate combined object
-combined <- combineBCR(contig_list, samples = c("a", "b", "c", "d", "f", "g", "h"), ID = c("WT", "WT", "BCL6", "BCL6", "E1020K", "E1020K_BCL6", "E1020K_BCL6"))
+combined <- combineBCR(contig_list, samples = c("a", "b", "c", "d", "f", "g", "h"))
+combined[[1]]
 
 str(combined)
 head(combined[[1]])
@@ -402,7 +403,7 @@ head(combined[[1]])
 quantContig(combined, cloneCall = "gene+nt", scale = T) #percent of unique clonotypes of total size of the size of clonotyeps
 quantContig(combined, cloneCall = "gene+nt", scale = F) #number of uniqe clonotypes
 
-quantContig(combined, cloneCall = "gene+nt", scale = T, chain = "IGL")#chain argument not working
+quantContig(combined, cloneCall = "gene+nt", scale = T, chain = "IGL")#by chain
 
 #Abundance of clonotypes
 Abundance_clonotypes <- abundanceContig(combined, cloneCall = "gene", scale = F, exportTable = T)
@@ -417,6 +418,18 @@ lengthContig(combined, cloneCall = "aa")
 lengthContig(combined, cloneCall = "nt")
 
 #Compare clonotypes
-compareClonotypes(combined, samples = c("MouseC1", "MouseD1"), cloneCall = "aa", graph = "alluvial") #Does not work
+compareClonotypes(combined, samples = c("a", "b"), cloneCall = "aa", graph = "alluvial") #Computationally intese
 
 #Visualise Gene Usage
+vizGenes(combined, gene = "J", chain = "IGH", plot = "bar", order = "variance", scale = TRUE)
+vizGenes(combined, gene = "V", chain = "IGL", plot = "bar", order = "variance", scale = TRUE)
+
+vizGenes(combined, gene = "V", chain = "IGL", plot = "heatmap", scale = TRUE, order = "gene")
+
+
+#Clonal overlap
+clonalOverlap(combined, cloneCall = "gene+nt", 
+              method = "morisita")
+#Clone Size Distribution
+clonesizeDistribution(combined, cloneCall = "gene+nt", 
+                      method="ward.D2")
