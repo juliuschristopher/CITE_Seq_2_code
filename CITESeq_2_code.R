@@ -324,7 +324,7 @@ pca_variance <- experiment@reductions$pca@stdev^2
 plot(pca_variance/sum(pca_variance), 
      ylab="Proportion of variance explained", 
      xlab="Principal component")
-abline(h = 0.01) #23
+abline(h = 0.01) #25
 
 ####Determine number of clusters####
 ##luster Tree Analysis
@@ -352,8 +352,8 @@ Plot_13
 ####Combine into wnn plot####
 experiment <- FindMultiModalNeighbors(
   experiment, reduction.list = list("pca", "apca"), 
-  dims.list = list(1:30, 1:18), modality.weight.name = "RNA.weight"
-)
+  dims.list = list(1:30, 1:18), modality.weight.name = "RNA.weight")
+
 #Determing resolution (cluster number) for wnn plot?
 clustree(experiment, prefix = "wsnn_res.") +
   theme(legend.position="bottom")
@@ -386,7 +386,7 @@ plot_mouse <- DimPlot(experiment, label = TRUE,reduction = "wnn.umap", label.siz
 plot_mouse
 
 ###Match the RNA Names to the Antibodies, this should be checked
-list1=c(rownames(c1_ab.data))
+list1=c(rownames(a_ab.data))
 list2=c("PTPRC","FAS","CD19","IGHM","CR2","FCER2A","CD93","CD83","CD86","IGHD","CD8A","SELL","CD44","CD4","CXCR5","PDCD1","IL2RA","CD274","PDCD1LG2","CTLA4","CD80","CD40","CD69","ICOS","CD38","TNFRSF18")
 
 ####Analysis of clusters####
@@ -397,7 +397,7 @@ FeaturePlot(experiment, features = c("CD19", "CD4", "CD8A", "PRDM1", "PPBP", "NK
 
 RidgePlot(experiment, features = c("CD19", "CYP11A1"), ncol = 2)
 
-FeaturePlot(experiment, features = "IL10", reduction = "wnn.umap")
+FeaturePlot(experiment, features = "NCR1", reduction = "wnn.umap")
 
 ##Finding all the markers
 experiment.markers <- FindAllMarkers(experiment, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
