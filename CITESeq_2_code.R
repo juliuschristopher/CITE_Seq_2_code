@@ -224,7 +224,7 @@ experiment_names=c("a","b","c","d","f","g","h")
 experiment<-merge(x= a, y=c(b,c,d,f,g,h))
 
 experiment
-str(experiment)
+tstr(experiment)
 head(experiment[[]])
 
 ####Merge seurat object with VDJ data####
@@ -292,6 +292,12 @@ plot4 = LabelPoints(plot = plot3, points = top20, repel = TRUE, xnudge = 0, ynud
 plot4
 
 #Scale data?
+
+#Cell Cycle genes
+S.genes = cc.genes.updated.2019$s.genes
+G2M.genes = cc.genes.updated.2019$g2m.genes
+
+experiment = CellCycleScoring(experiment, s.features=S.genes, g2m.features=G2M.genes, set.ident = TRUE)
 
 ####Dimensionality reduction -PCA####
 #Perform linear dimensional reduction (PCA)
@@ -375,6 +381,10 @@ plot_mouse
 ###Umap-wnn by sample
 DimPlot(experiment, label = TRUE,cols=colbig, reduction = "wnn.umap", label.size = 2.5, split.by = "orig.ident", ncol = 2) + NoLegend()
 
+###Umap-wnn by cell cycle stage
+DimPlot(experiment, label = TRUE,reduction = "wnn.umap", label.size = 2.5, group.by = "Phase")
+
+head(experiment[[]])
 ###Match the RNA Names to the Antibodies, this should be checked
 list1=c(rownames(a_ab.data))
 list2=c("PTPRC","FAS","CD19","IGHM","CR2","FCER2A","CD93","CD83","CD86","IGHD","CD8A","SELL","CD44","CD4","CXCR5","PDCD1","IL2RA","CD274","PDCD1LG2","CTLA4","CD80","CD40","CD69","ICOS","CD38","TNFRSF18")
@@ -383,6 +393,7 @@ list2=c("PTPRC","FAS","CD19","IGHM","CR2","FCER2A","CD93","CD83","CD86","IGHD","
 ##Different plotting options
 DefaultAssay(experiment) <- "RNA"
 DefaultAssay(experiment) <- "ADT"
+
 FeaturePlot(experiment, features = c("CD19", "CD4", "CD8A", "PRDM1", "PPBP", "NKG7", "CST3", "FOXP3", "B220"), reduction = "wnn.umap")
 
 RidgePlot(experiment, features = c("CD19", "CYP11A1"), ncol = 2)
@@ -390,10 +401,12 @@ RidgePlot(experiment, features = c("CD19", "CYP11A1"), ncol = 2)
 FeaturePlot(experiment, features = c("IGHV1-53", "IGKV3-4", "IGHD1-1"), reduction = "wnn.umap")
 FeaturePlot(experiment, feature = "IGHG", reduction = "wnn.umap")
 
-FeaturePlot(experiment, features = c("FOXP3"), reduction = "wnn.umap")
-VlnPlot(experiment, feature = "IGHD")
+FeaturePlot(experiment, features = c("CD44"), reduction = "wnn.umap")
+VlnPlot(experiment, feature = "CTLA4")
+?VlnPlot
 p3
 
+Idents(object = experiment) <- "old.ident"
 head(experiment[[]])
 ##Finding all the markers
 experiment.markers <- FindAllMarkers(experiment, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
@@ -406,9 +419,6 @@ DoHeatmap(experiment, features = top10$gene) + NoLegend()
 Cluster_11 <- FindMarkers(experiment, ident.1 = 11, assay = "RNA")
 Cluster_11_adt <- FindMarkers(experiment, ident.1 = 11, assay = "ADT")
 
-p3
-experiment
-
 Cluster_4 <- FindMarkers(experiment, ident.1 = 4, assay = "RNA")
 Cluster_4_adt <- FindMarkers(experiment, ident.1 = 4, assay = "ADT")
 
@@ -419,16 +429,9 @@ Unknown_cells <- RunUMAP(Unknown_cells, dims = 1:30, reduction.name = "unknown.u
 DimPlot(Unknown_cells, label = TRUE, cols=colbig, reduction = "unknown.umap", label.size = 2.5) + NoLegend()
 FeaturePlot(Unknown_cells, "SOX4", reduction = "unknown.umap")
 
-###Clonotype analysis
-#Data preparation
-contig_list <- list(c1_cl.data, c2_cl.data, d1_cl.data, d2_cl.data)
-head(contig_list[[1]])
 
-combined <- combineBCR(contig_list, samples = c("MouseC1", "MouseC2", "MouseD1", "MouseD2"), ID = c("c1", "c2", "d1", "d2"))
-str(combined)
-head(combined[[1]])
-
-##Data visualisation
+####Clonotype analysis####
+##Data visualization
 #Percent/total number of unique clonotypes 
 quantContig(combined, cloneCall = "gene+nt", scale = T) #percent of unique clonotypes of total size of the size of clonotyeps
 quantContig(combined, cloneCall = "gene+nt", scale = F) #number of uniqe clonotypes
