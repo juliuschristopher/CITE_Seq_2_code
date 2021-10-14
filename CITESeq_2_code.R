@@ -233,6 +233,7 @@ experiment <- combineExpression(combined,
                                    cloneCall="gene", group.by = "sample")
 
 head(experiment[[]])
+
 ####Quality control, filtering, normalisation and scaling####
 #Mitochondrial QC metrics
 experiment[["percent.mt"]] <- PercentageFeatureSet(experiment, pattern = "^MT-")
@@ -272,18 +273,6 @@ filter_seurat = function(seurat_object){
 
 experiment <-  filter_seurat(experiment)
 
-####Normalise dataset - default####
-experiment <- NormalizeData(experiment, normalization.method = "LogNormalize", scale.factor = 10000, verbose = TRUE)
-
-#Find variable features
-experiment <- FindVariableFeatures(experiment, selection.method = "vst")
-top20 = head(VariableFeatures(experiment), 20)
-
-plot3 = VariableFeaturePlot(experiment)
-plot4 = LabelPoints(plot = plot3, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
-plot4
-
-
 ####Normalise dataset - SCTransform####
 experiment = SCTransform(experiment, verbose = TRUE)
 experiment[["SCT"]]
@@ -303,7 +292,6 @@ plot4 = LabelPoints(plot = plot3, points = top20, repel = TRUE, xnudge = 0, ynud
 plot4
 
 #Scale data?
-experiment <- ScaleData(experiment)
 
 ####Dimensionality reduction -PCA####
 #Perform linear dimensional reduction (PCA)
@@ -374,7 +362,6 @@ p1=DimPlot(experiment, label = TRUE,cols=colbig,reduction = "rna.umap", label.si
 p2=DimPlot(experiment, label = TRUE,cols=colbig,reduction = "adt.umap", label.size = 2.5) + NoLegend()
 p3=DimPlot(experiment, label = TRUE,cols=colbig, reduction = "wnn.umap", label.size = 2.5) + NoLegend()
 
-
 p1|p2|p3
 
 p1
@@ -384,6 +371,9 @@ p3
 ###Umap-wnn by mouse
 plot_mouse <- DimPlot(experiment, label = TRUE,reduction = "wnn.umap", label.size = 2.5, group.by = "orig.ident")
 plot_mouse
+
+###Umap-wnn by sample
+DimPlot(experiment, label = TRUE,cols=colbig, reduction = "wnn.umap", label.size = 2.5, split.by = "orig.ident", ncol = 2) + NoLegend()
 
 ###Match the RNA Names to the Antibodies, this should be checked
 list1=c(rownames(a_ab.data))
@@ -398,11 +388,13 @@ FeaturePlot(experiment, features = c("CD19", "CD4", "CD8A", "PRDM1", "PPBP", "NK
 RidgePlot(experiment, features = c("CD19", "CYP11A1"), ncol = 2)
 
 FeaturePlot(experiment, features = c("IGHV1-53", "IGKV3-4", "IGHD1-1"), reduction = "wnn.umap")
-VlnPlot(experiment, feature = "IGKV3-4")
+FeaturePlot(experiment, feature = "IGHG", reduction = "wnn.umap")
 
-FeaturePlot(experiment, features = c("IGKV3-4"), reduction = "wnn.umap", split.by = "orig.ident")
-VlnPlot(experiment, feature = "RNF213")
+FeaturePlot(experiment, features = c("FOXP3"), reduction = "wnn.umap")
+VlnPlot(experiment, feature = "IGHD")
 p3
+
+head(experiment[[]])
 ##Finding all the markers
 experiment.markers <- FindAllMarkers(experiment, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
 experiment.markers %>%
@@ -414,10 +406,11 @@ DoHeatmap(experiment, features = top10$gene) + NoLegend()
 Cluster_11 <- FindMarkers(experiment, ident.1 = 11, assay = "RNA")
 Cluster_11_adt <- FindMarkers(experiment, ident.1 = 11, assay = "ADT")
 
+p3
 experiment
 
-Cluster_12 <- FindMarkers(experiment, ident.1 = 12, assay = "RNA")
-Cluster_12_adt <- FindMarkers(experiment, ident.1 = 12, assay = "ADT")
+Cluster_4 <- FindMarkers(experiment, ident.1 = 4, assay = "RNA")
+Cluster_4_adt <- FindMarkers(experiment, ident.1 = 4, assay = "ADT")
 
 ##Subsetting unknown cluster
 Unknown_cells <- subset(experiment, idents = c(2, 12, 27, 33))
